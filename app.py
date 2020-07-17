@@ -1,5 +1,23 @@
 # import dependancies
+import numpy as np
+import datetime as dt
+import sqlalchemy
+from sqlalchemy.ext.automap import automap_base
+from sqlalchemy.orm import Session
+from sqlalchemy import create_engine, func
+
 from flask import Flask, jsonify
+
+# database setup
+engine = create_engine("sqlite:///Resources/hawaii.sqlite")
+
+# reflect an existing database into a new model
+Base = automap_base()
+# reflect the tables
+Base.prepare(engine, reflect=True)
+
+# Save reference to the table
+Measurement = Base.classes.measurement
 
 # setup Flask
 app = Flask(__name__)
@@ -16,6 +34,30 @@ def home():
         f'<h4>TOBS - /api/v1.0/tobs</h4>'
         f'<h4>Analysis - /api/v1.0/<start> and /api/v1.0/<start>/<end></h4>'
     )
+
+
+# display climate page
+# Design a query to retrieve the last 12 months of precipitation data and plot the results
+@app.route("/api/v1.0/precipitation")
+def precipitation():
+    session = Session(engine)
+    current_date = session.query(Measurement.date).order_by(
+        Measurement.date.desc()).first()
+    year_ago_date = dt.date(2017, 8, 23) - dt.timedelta(days=365)
+
+    # Perform a query to retrieve the data and precipitation scores
+    results = session.query(Measurement.date, Measurement.prcp).filter(
+        Measurement.date >= year_ago_date).filter(
+        Measurement.date <= current_date[0]).order_by(Measurement.date).all()
+    session.close()
+
+    # convert the result to a dictionary
+    results_list = list(np.ravel(results))
+    results_dict = {}
+    for i in range(0, len(results_list), 2):
+        results_dict.update({results_list[i]: results_list[i+1]})
+
+    return results_dict
 
 
 if __name__ == '__main__':
