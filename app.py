@@ -16,8 +16,9 @@ Base = automap_base()
 # reflect the tables
 Base.prepare(engine, reflect=True)
 
-# Save reference to the table
+# Save reference to the tables
 Measurement = Base.classes.measurement
+Station = Base.classes.station
 
 # setup Flask
 app = Flask(__name__)
@@ -49,6 +50,23 @@ def precipitation():
     results = session.query(Measurement.date, Measurement.prcp).filter(
         Measurement.date >= year_ago_date).filter(
         Measurement.date <= current_date[0]).order_by(Measurement.date).all()
+    session.close()
+
+    # convert the result to a dictionary
+    results_list = list(np.ravel(results))
+    results_dict = {}
+    for i in range(0, len(results_list), 2):
+        results_dict.update({results_list[i]: results_list[i+1]})
+
+    return results_dict
+
+# display station names
+@app.route('/api/v1.0/stations')
+def stations():
+    session = Session(engine)
+    # Perform query to retrieve all station names
+    results = session.query(Station.station, Station.name).order_by(
+        Station.station).all()
     session.close()
 
     # convert the result to a dictionary
