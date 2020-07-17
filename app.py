@@ -77,6 +77,26 @@ def stations():
 
     return results_dict
 
+# display most active station's observations
+@app.route('/api/v1.0/tobs')
+def station_information():
+    session = Session(engine)
+    # Query the last 12 months of temperature observation data for this station and plot the results as a histogram
+    current_date = session.query(Measurement.date).order_by(
+        Measurement.date.desc()).first()
+    year_ago_date = dt.date(2017, 8, 23) - dt.timedelta(days=365)
+    results = session.query(Measurement.date, Measurement.tobs).filter(
+        Measurement.station == 'USC00519281').all()
+    session.close()
+
+    # convert the result to a dictionary
+    results_list = list(np.ravel(results))
+    results_dict = {}
+    for i in range(0, len(results_list), 2):
+        results_dict.update({results_list[i]: results_list[i+1]})
+
+    return results_dict
+
 
 if __name__ == '__main__':
     app.run(debug=True)
