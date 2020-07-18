@@ -132,6 +132,7 @@ def weather_analysis(start, end):
 
     session.close()
 
+    # create temparature analysis json dictionary
     analysis = {
         "Minimum Temperature: ": min_temp,
         "Maximum Temperature: ": max_temp,
