@@ -101,5 +101,44 @@ def station_information():
     return results_dict
 
 
+# display weather statistics for a date range
+@app.route('/api/v1.0/<start>', defaults={'end': None}, methods=['GET'])
+@app.route('/api/v1.0/<start>/<end>', methods=['GET'])
+def weather_analysis(start, end):
+    session = Session(engine)
+    if (end == None):
+        lowest = session.query(Measurement.station, func.min(Measurement.tobs)).filter(
+            Measurement.date >= start).all()
+        min_temp = [x[1] for x in lowest[:1]][0]
+        highest = session.query(Measurement.station, func.max(Measurement.tobs)).filter(
+            Measurement.date >= start).all()
+        max_temp = [x[1] for x in highest[:1]][0]
+        average = session.query(Measurement.station, func.avg(Measurement.tobs)).filter(
+            Measurement.date >= start).all()
+        avg_temp = [x[1] for x in average[:1]][0]
+    else:
+        lowest = session.query(Measurement.station, func.min(Measurement.tobs)).filter(
+            Measurement.date >= start).filter(
+            Measurement.date <= end).all()
+        min_temp = [x[1] for x in lowest[:1]][0]
+        highest = session.query(Measurement.station, func.max(Measurement.tobs)).filter(
+            Measurement.date >= start).filter(
+            Measurement.date <= end).all()
+        max_temp = [x[1] for x in highest[:1]][0]
+        average = session.query(Measurement.station, func.avg(Measurement.tobs)).filter(
+            Measurement.date >= start).filter(
+            Measurement.date <= end).all()
+        avg_temp = [x[1] for x in average[:1]][0]
+
+    session.close()
+
+    analysis = {
+        "Minimum Temperature: ": min_temp,
+        "Maximum Temperature: ": max_temp,
+        "Average Temperature: ": round(avg_temp, 2)
+    }
+    return analysis
+
+
 if __name__ == '__main__':
     app.run(debug=True)
