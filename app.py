@@ -24,22 +24,23 @@ Station = Base.classes.station
 app = Flask(__name__)
 
 # display home page
-@app.route("/")
+@app.route("/", methods=['GET'])
 def home():
     return (
         f'<h1>Welcome to Weather Analysis for: Honolulu, Hawaii</h1>'
-        f'<h3>Here are all available routes for this website</h2>'
+        f'<h3>Here are all the available routes for this website</h2>'
         f'<h4>Homepage - /</h4>'
-        f'<h4>Precipitation - /api/v1.0/precipitation</h4>'
-        f'<h4>Stations - /api/v1.0/stations</h4>'
-        f'<h4>TOBS - /api/v1.0/tobs</h4>'
-        f'<h4>Analysis - /api/v1.0/<start> and /api/v1.0/<start>/<end></h4>'
+        f'<h4>Past 12 Months Precipitation Data - /api/v1.0/precipitation</h4>'
+        f'<h4>List of Stations - /api/v1.0/stations</h4>'
+        f'<h4>Past 12 Months TOBS Data - /api/v1.0/tobs</h4>'
+        f'<h4>Analysis by Start Date - /api/v1.0/<start></h4>'
+        f'<h4>Analysis by Start & End Date -  /api/v1.0/<start>/<end></h4>'
     )
 
 
 # display climate page
-# Design a query to retrieve the last 12 months of precipitation data and plot the results
-@app.route("/api/v1.0/precipitation")
+# Design a query to retrieve the last 12 months of precipitation data
+@app.route("/api/v1.0/precipitation", methods=['GET'])
 def precipitation():
     session = Session(engine)
     current_date = session.query(Measurement.date).order_by(
@@ -61,7 +62,7 @@ def precipitation():
     return results_dict
 
 # display station names
-@app.route('/api/v1.0/stations')
+@app.route('/api/v1.0/stations', methods=['GET'])
 def stations():
     session = Session(engine)
     # Perform query to retrieve all station names
@@ -78,15 +79,17 @@ def stations():
     return results_dict
 
 # display most active station's observations
-@app.route('/api/v1.0/tobs')
+@app.route('/api/v1.0/tobs', methods=['GET'])
 def station_information():
     session = Session(engine)
-    # Query the last 12 months of temperature observation data for this station and plot the results as a histogram
+    # Query the last 12 months of temperature observation data for this station
     current_date = session.query(Measurement.date).order_by(
         Measurement.date.desc()).first()
     year_ago_date = dt.date(2017, 8, 23) - dt.timedelta(days=365)
     results = session.query(Measurement.date, Measurement.tobs).filter(
-        Measurement.station == 'USC00519281').all()
+        Measurement.station == 'USC00519281').filter(
+        Measurement.date >= year_ago_date).filter(
+        Measurement.date <= current_date[0]).all()
     session.close()
 
     # convert the result to a dictionary
